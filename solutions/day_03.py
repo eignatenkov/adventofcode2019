@@ -1,6 +1,7 @@
 """
 https://adventofcode.com/2019/day/3
 """
+from datetime import datetime
 
 
 def compute_instruction_points(start_point, instruction):
@@ -31,14 +32,8 @@ def find_closest_to_zero_intersection(path_one, path_two):
 
 
 def find_closest_intersection_by_paths(path_one, path_two):
-    path_one = path_one[1:]
-    path_two = path_two[1:]
-    for min_length in range(len(path_one) + len(path_two) - 1):
-        for index_one in range(max(0, min_length - len(path_two) + 1),
-                               min(min_length + 1, len(path_one))):
-            index_two = min_length - index_one
-            if path_one[index_one] == path_two[index_two]:
-                return min_length + 2
+    intersections = set(path_one[1:]) & set(path_two[1:])
+    return min((path_one.index(i) + path_two.index(i)) for i in intersections)
 
 
 def solution(input_path):
@@ -51,4 +46,6 @@ def solution(input_path):
 
 
 if __name__ == "__main__":
+    now = datetime.now()
     print(solution("../data/day_03.txt"))
+    print(datetime.now() - now)
