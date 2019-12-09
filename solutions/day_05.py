@@ -7,19 +7,48 @@ from copy import copy
 class IntCode:
     def __init__(self, program, input=None):
         self.program = program
+        self.memory = []
         self.pointer = 0
         if isinstance(input, int):
             input = [input]
         self.input = (i for i in input) if input else None
         self.output = []
+        self.relative_base = 0
+
+    def _read(self, index):
+        if index < len(self.program):
+            return self.program[index]
+        else:
+            mem_index = index - len(self.program)
+            if mem_index >= len(self.memory):
+                self.memory += [0] * (mem_index - len(self.memory) + 1)
+            return self.memory[mem_index]
+
+    def _write(self, index, value):
+        if index < len(self.program):
+            self.program[index] = value
+        else:
+            mem_index = index - len(self.program)
+            if mem_index >= len(self.memory):
+                self.memory += [0] * (mem_index - len(self.memory) + 1)
+            self.memory[mem_index] = value
 
     def _get_value(self, parameter, mode):
         if mode == 0:
-            return self.program[parameter]
+            return self._read(parameter)
         elif mode == 1:
             return parameter
+        elif mode == 2:
+            return self._read(self.relative_base + parameter)
         else:
             raise Exception(f"unknown parameter mode {mode}")
+
+    def _write_value(self, parameter, mode, value):
+        if mode == 0:
+            index = parameter
+        elif mode == 2:
+            index = self.relative_base + parameter
+        self._write(index, value)
 
     def apply_instruction(self):
         instruction = str(self.program[self.pointer])
@@ -29,15 +58,13 @@ class IntCode:
             parameter_modes = parameter_modes.zfill(3)[::-1]
             a, b = [self._get_value(x, int(p)) for x, p in zip(self.program[self.pointer + 1: self.pointer + 3],
                                                                parameter_modes[:2])]
-            target = self.program[self.pointer + 3]
-            if opcode == 1:
-                self.program[target] = a + b
-            else:
-                self.program[target] = a * b
+            result = a + b if opcode == 1 else a * b
+            self._write_value(self.program[self.pointer + 3], int(parameter_modes[-1]), result)
             self.pointer += 4
         elif opcode in [3, 4]:
             if opcode == 3:
-                self.program[self.program[self.pointer + 1]] = next(self.input)
+                parameter_mode = int(parameter_modes.zfill(1))
+                self._write_value(self.program[self.pointer + 1], parameter_mode, next(self.input))
             else:
                 parameter_mode = int(parameter_modes.zfill(1))
                 parameter = self._get_value(self.program[self.pointer + 1], parameter_mode)
@@ -57,12 +84,14 @@ class IntCode:
             parameter_modes = parameter_modes.zfill(3)[::-1]
             a, b = [self._get_value(x, int(p)) for x, p in zip(self.program[self.pointer + 1: self.pointer + 3],
                                                                parameter_modes[:2])]
-            target = self.program[self.pointer + 3]
-            if opcode == 7 and a < b or opcode == 8 and a == b:
-                self.program[target] = 1
-            else:
-                self.program[target] = 0
+            result = 1 if opcode == 7 and a < b or opcode == 8 and a == b else 0
+            self._write_value(self.program[self.pointer + 3], int(parameter_modes[-1]), result)
             self.pointer += 4
+        elif opcode == 9:
+            parameter_mode = int(parameter_modes.zfill(1))
+            parameter = self._get_value(self.program[self.pointer + 1], parameter_mode)
+            self.relative_base += parameter
+            self.pointer += 2
         elif opcode == 99:
             self.pointer += 1
             return 200
