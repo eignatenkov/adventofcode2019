@@ -43,6 +43,8 @@ class IntCode:
                 parameter = self._get_value(self.program[self.pointer + 1], parameter_mode)
                 self.output.append(parameter)
             self.pointer += 2
+            if opcode == 4:
+                return 100
         elif opcode in [5, 6]:
             parameter_modes = parameter_modes.zfill(2)[::-1]
             a, b = [self._get_value(x, int(p)) for x, p in zip(self.program[self.pointer + 1: self.pointer + 3],
@@ -71,8 +73,13 @@ class IntCode:
         while self.pointer < len(self.program):
             a = self.apply_instruction()
             if a == 200:
-                print(self.output)
                 return
+
+    def get_next_output(self):
+        while self.pointer < len(self.program):
+            a = self.apply_instruction()
+            if a == 100:
+                return self.output[-1]
 
 
 if __name__ == "__main__":
@@ -80,6 +87,8 @@ if __name__ == "__main__":
         program = [int(x) for x in f.readline().split(',')]
     ic = IntCode(copy(program), 1)
     ic.apply_itself()
+    print(ic.output[-1])
     print('----------')
     ic = IntCode(copy(program), 5)
     ic.apply_itself()
+    print(ic.output[-1])
