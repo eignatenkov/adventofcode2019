@@ -41,6 +41,9 @@ class Moon:
     def __eq__(self, other):
         return self.position == other.position and self.velocity == other.velocity
 
+    def __repr__(self):
+        return f"Moon({self.position.__repr__()}, {self.velocity.__repr__()})"
+
     def __hash__(self):
         return hash(f"{self.position.x}{self.position.y}{self.position.z}{self.velocity.x}{self.velocity.y}{self.velocity.z}")
 
@@ -67,6 +70,9 @@ class MoonSystem:
                 coords = [int(x[2:]) for x in line.strip(' \n<>').split(', ')]
                 self.moons.append(Moon(position=Point(*coords)))
 
+    def __repr__(self):
+        return ','.join([moon.__repr__() for moon in self.moons])
+
     def apply_gravity(self):
         for moon_one, moon_two in combinations(self.moons, 2):
             moon_one.apply_gravity(moon_two)
@@ -82,6 +88,19 @@ class MoonSystem:
 
     def total_energy(self):
         return sum(moon.total_energy() for moon in self.moons)
+
+    def stupid_cycle_check(self):
+        moons_states = {tuple(self.moons)}
+        counter = 0
+        while True:
+            self.simulate()
+            counter += 1
+            if not counter % 10000:
+                print(counter)
+            if tuple(self.moons) not in moons_states:
+                moons_states.add(tuple(self.moons))
+            else:
+                return counter
 
     def track_states(self):
         moon_states = [{moon} for moon in self.moons]
@@ -106,5 +125,5 @@ if __name__ == "__main__":
         moons.simulate()
     print(moons.total_energy())
     moons = MoonSystem()
-    moons.from_file("../data/day_12_test.txt")
-    print(moons.track_states())
+    moons.from_file("../data/day_12.txt")
+    print(moons.stupid_cycle_check())
