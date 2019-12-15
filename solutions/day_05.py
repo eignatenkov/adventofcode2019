@@ -5,15 +5,23 @@ from copy import copy
 
 
 class IntCode:
-    def __init__(self, program, input=None):
+    def __init__(self, program=None, input=None):
         self.program = program
         self.memory = []
         self.pointer = 0
+        self.input = None
+        self._set_input(input)
+        self.output = []
+        self.relative_base = 0
+
+    def read_program_from_file(self, filename):
+        with open(filename) as f:
+            self.program = [int(x) for x in f.readline().strip().split(',')]
+
+    def _set_input(self, input):
         if isinstance(input, int):
             input = [input]
         self.input = (i for i in input) if input else None
-        self.output = []
-        self.relative_base = 0
 
     def _read(self, index):
         if index < len(self.program):
@@ -98,7 +106,11 @@ class IntCode:
         else:
             raise Exception(f"unknown code {opcode}")
 
-    def apply_itself(self):
+    def apply_itself(self, input=None, clear_outputs=False):
+        if input:
+            self._set_input(input)
+        if clear_outputs:
+            self.output = []
         while self.pointer < len(self.program):
             a = self.apply_instruction()
             if a == 200:
