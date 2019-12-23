@@ -14,6 +14,11 @@ class IntCode:
         self.output = []
         self.relative_base = 0
 
+    @classmethod
+    def read_program(cls, filename):
+        with open(filename) as f:
+            return [int(x) for x in f.readline().strip().split(',')]
+
     def read_program_from_file(self, filename):
         with open(filename) as f:
             self.program = [int(x) for x in f.readline().strip().split(',')]
